@@ -246,7 +246,7 @@ def process_article(args, lower=True):
 
 def process_article_star(args_lower):
     """
-    Dumb method for pass zip(args, lower) arguments to original function
+    Dumb method for pass (args, lower) to original function
     """
     return process_article(*args_lower)
 
@@ -273,19 +273,22 @@ class WikiCorpus(TextCorpus):
         this automatic logic by forcing the `lemmatize` parameter explicitly.
 
         """
+
         self.fname = fname
         self.filter_namespaces = filter_namespaces
         self.metadata = False
+        self.lower = lower
+
         if processes is None:
             processes = max(1, multiprocessing.cpu_count() - 1)
         self.processes = processes
         self.lemmatize = lemmatize
         if dictionary is None:
-            self.dictionary = Dictionary(self.get_texts(lower=lower))
+            self.dictionary = Dictionary(self.get_texts())
         else:
             self.dictionary = dictionary
 
-    def get_texts(self, lower=True):
+    def get_texts(self):
         """
         Iterate over the dump, returning text version of each article as a list
         of tokens.
@@ -299,6 +302,7 @@ class WikiCorpus(TextCorpus):
         >>> for vec in wiki_corpus:
         >>>     print(vec)
         """
+
         articles, articles_all = 0, 0
         positions, positions_all = 0, 0
         texts = ((text, self.lemmatize, title, pageid) for title, text, pageid in extract_pages(bz2.BZ2File(self.fname), self.filter_namespaces))
@@ -308,7 +312,7 @@ class WikiCorpus(TextCorpus):
         ignore_namespaces = 'Wikipedia Category File Portal Template MediaWiki User Help Book Draft'.split()
         for group in utils.chunkize(texts, chunksize=10 * self.processes, maxsize=1):
 
-            for tokens, title, pageid in pool.map(process_article_star, zip(group, itertools.repeat(lower))): # chunksize=10):
+            for tokens, title, pageid in pool.map(process_article_star, zip(group, itertools.repeat(self.lower))): # chunksize=10):
                 articles_all += 1
                 positions_all += len(tokens)
                 # article redirects and short stubs are pruned here
@@ -327,3 +331,4 @@ class WikiCorpus(TextCorpus):
             (articles, positions, articles_all, positions_all, ARTICLE_MIN_WORDS))
         self.length = articles # cache corpus length
 # endclass WikiCorpus
+
