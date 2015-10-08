@@ -246,9 +246,9 @@ def process_article(args, lower=True):
 
 def process_article_star(args_lower):
     """
-    Dumb method for pass (args, lower) arguments to original function
+    Dumb method for pass zip(args, lower) arguments to original function
     """
-    return process_article(*a_b)
+    return process_article(*args_lower)
 
 
 
