@@ -23,6 +23,7 @@ import logging
 import re
 from xml.etree.cElementTree import iterparse # LXML isn't faster, so let's go with the built-in solution
 import multiprocessing
+import itertools
 
 from gensim import utils
 
@@ -157,7 +158,7 @@ def remove_file(s):
     return s
 
 
-def tokenize(content):
+def tokenize(content, lower=True):
     """
     Tokenize a piece of text from wikipedia. The input string `content` is assumed
     to be mark-up free (see `filter_wiki()`).
@@ -166,7 +167,7 @@ def tokenize(content):
     that 15 characters (not bytes!).
     """
     # TODO maybe ignore tokens with non-latin characters? (no chinese, arabic, russian etc.)
-    return [token.encode('utf8') for token in utils.tokenize(content, lower=True, errors='ignore')
+    return [token.encode('utf8') for token in utils.tokenize(content, lower=lower, errors='ignore')
             if 2 <= len(token) <= 15 and not token.startswith('_')]
 
 
@@ -224,7 +225,7 @@ def extract_pages(f, filter_namespaces=False):
             elem.clear()
 _extract_pages = extract_pages  # for backward compatibility
 
-def process_article(args):
+def process_article(args, lower=True):
     """
     Parse a wikipedia article, returning its content as a list of tokens
     (utf8-encoded strings).
@@ -234,8 +235,16 @@ def process_article(args):
     if lemmatize:
         result = utils.lemmatize(text)
     else:
-        result = tokenize(text)
+        result = tokenize(text, lower=lower)
     return result, title, pageid
+
+
+def process_article_star(args_lower):
+    """
+    Dumb method for pass (args, lower) arguments to original function
+    """
+    return process_article(*a_b)
+
 
 
 class WikiCorpus(TextCorpus):
@@ -249,7 +258,7 @@ class WikiCorpus(TextCorpus):
     >>> MmCorpus.serialize('wiki_en_vocab200k', wiki) # another 8h, creates a file in MatrixMarket format plus file with id->word
 
     """
-    def __init__(self, fname, processes=None, lemmatize=utils.HAS_PATTERN, dictionary=None, filter_namespaces=('0',)):
+    def __init__(self, fname, processes=None, lemmatize=utils.HAS_PATTERN, dictionary=None, filter_namespaces=('0',), lower=True):
         """
         Initialize the corpus. Unless a dictionary is provided, this scans the
         corpus once, to determine its vocabulary.
@@ -267,11 +276,11 @@ class WikiCorpus(TextCorpus):
         self.processes = processes
         self.lemmatize = lemmatize
         if dictionary is None:
-            self.dictionary = Dictionary(self.get_texts())
+            self.dictionary = Dictionary(self.get_texts(lower=lower))
         else:
             self.dictionary = dictionary
 
-    def get_texts(self):
+    def get_texts(self, lower=True):
         """
         Iterate over the dump, returning text version of each article as a list
         of tokens.
@@ -293,7 +302,7 @@ class WikiCorpus(TextCorpus):
         # is dumb and would load the entire input into RAM at once...
         ignore_namespaces = 'Wikipedia Category File Portal Template MediaWiki User Help Book Draft'.split()
         for group in utils.chunkize(texts, chunksize=10 * self.processes, maxsize=1):
-            for tokens, title, pageid in pool.imap(process_article, group): # chunksize=10):
+            for tokens, title, pageid in pool.map(process_article_star, itertools.izip(group, itertools.repeat(lower))): # chunksize=10):
                 articles_all += 1
                 positions_all += len(tokens)
                 # article redirects and short stubs are pruned here
