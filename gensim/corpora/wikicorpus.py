@@ -25,6 +25,11 @@ from xml.etree.cElementTree import iterparse # LXML isn't faster, so let's go wi
 import multiprocessing
 import itertools
 
+try:
+    from itertools import izip as zip
+except:
+    pass
+
 from gensim import utils
 
 # cannot import whole gensim.corpora, because that imports wikicorpus...
@@ -302,7 +307,8 @@ class WikiCorpus(TextCorpus):
         # is dumb and would load the entire input into RAM at once...
         ignore_namespaces = 'Wikipedia Category File Portal Template MediaWiki User Help Book Draft'.split()
         for group in utils.chunkize(texts, chunksize=10 * self.processes, maxsize=1):
-            for tokens, title, pageid in pool.map(process_article_star, itertools.izip(group, itertools.repeat(lower))): # chunksize=10):
+
+            for tokens, title, pageid in pool.map(process_article_star, zip(group, itertools.repeat(lower))): # chunksize=10):
                 articles_all += 1
                 positions_all += len(tokens)
                 # article redirects and short stubs are pruned here
