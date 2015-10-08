@@ -312,7 +312,7 @@ class WikiCorpus(TextCorpus):
         ignore_namespaces = 'Wikipedia Category File Portal Template MediaWiki User Help Book Draft'.split()
         for group in utils.chunkize(texts, chunksize=10 * self.processes, maxsize=1):
 
-            for tokens, title, pageid in pool.map(process_article_star, zip(group, itertools.repeat(self.lower))): # chunksize=10):
+            for tokens, title, pageid in pool.imap(process_article_star, zip(group, itertools.repeat(self.lower))): # chunksize=10):
                 articles_all += 1
                 positions_all += len(tokens)
                 # article redirects and short stubs are pruned here
