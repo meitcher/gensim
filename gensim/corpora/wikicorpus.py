@@ -171,9 +171,9 @@ def tokenize(content, lower=True):
     Return list of tokens as utf8 bytestrings. Ignore words shorted than 2 or longer
     that 15 characters (not bytes!).
     """
-    # TODO maybe ignore tokens with non-latin characters? (no chinese, arabic, russian etc.)
+    min_token_size, max_token_size  = 1, 20
     return [token.encode('utf8') for token in utils.tokenize(content, lower=lower, errors='ignore')
-            if 2 <= len(token) <= 15 and not token.startswith('_')]
+            if min_token_size <= len(token) <= max_token_size and not token.startswith('_')]
 
 
 def get_namespace(tag):
