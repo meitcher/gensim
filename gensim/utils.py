@@ -86,7 +86,7 @@ except ImportError:
 PAT_ALPHABETIC = re.compile('(((?![\d])\w)+)', re.UNICODE)
 PAT_ALPHABETIC_NUMBERIC = re.compile('(((?![\W])\w)+)', re.UNICODE)
 RE_HTML_ENTITY = re.compile(r'&(#?)([xX]?)(\w{1,8});', re.UNICODE)
-PAT_ALL_SYMBOLS = re.compile(r'(((?![\d])\w)+)|(\w+)|([!\"#$%&\'()\*+,-\./:;<=>?@\[\\\]\^_`{|}~])', re.UNICODE)
+PAT_ALL_SYMBOLS = re.compile(r'(((?![\d])\w)+)|(\d+)|([!\"#$%&\'()\*+,-\./:;<=>?@\[\\\]\^_`{|}~])', re.UNICODE)
 
 
 def synchronous(tlockname):
@@ -190,7 +190,7 @@ def tokenize(text, lowercase=False, deacc=False, errors="strict", to_lower=False
         text = text.lower()
     if deacc:
         text = deaccent(text)
-    for match in PAT_ALL_SYMBOLS.finditer(text):
+    for match in PAT_ALPHABETIC.finditer(text):
         yield match.group()
 
 
