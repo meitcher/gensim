@@ -190,7 +190,7 @@ def tokenize(text, lowercase=False, deacc=False, errors="strict", to_lower=False
         text = text.lower()
     if deacc:
         text = deaccent(text)
-    for match in PAT_ALPHABETIC.finditer(text):
+    for match in PAT_ALL_SYMBOLS.finditer(text):
         yield match.group()
 
 
